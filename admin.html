@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - JSON Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style> .selected-img { border: 4px solid #10B981; transform: scale(1.05); } </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-6 font-sans">
+
+    <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="bg-gradient-to-r from-green-600 to-green-500 p-6 text-white flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold">Admin Panel Kerupuk Lomang</h1>
+                <p class="text-sm opacity-90">Mode: JSON Generator (Aman & Statis)</p>
+            </div>
+            <div class="text-right text-xs">
+                <p>1. Upload foto ke folder 'aset/'</p>
+                <p>2. Generate data disini</p>
+                <p>3. Update file 'products.json'</p>
+            </div>
+        </div>
+
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="space-y-4">
+                <h3 class="font-bold text-gray-700 border-b pb-2">1. Detail Produk Baru</h3>
+                <input type="text" id="nama" class="w-full border p-3 rounded bg-gray-50" placeholder="Nama Produk">
+                <input type="number" id="harga" class="w-full border p-3 rounded bg-gray-50" placeholder="Harga (Rp)">
+                <textarea id="deskripsi" class="w-full border p-3 rounded bg-gray-50" rows="3" placeholder="Deskripsi Singkat"></textarea>
+                
+                <input type="hidden" id="selectedImageUrl">
+                <div class="bg-green-50 text-green-800 p-3 rounded text-sm font-medium" id="statusImg">
+                    Silakan pilih gambar di samping ->
+                </div>
+
+                <button onclick="generateJSON()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded transition shadow-lg">
+                    TAMBAHKAN KE LIST (JSON)
+                </button>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center border-b pb-2 mb-4">
+                    <h3 class="font-bold text-gray-700">2. Pilih Gambar (Dari GitHub)</h3>
+                    <button onclick="loadImages()" class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200">Refresh</button>
+                </div>
+                
+                <div class="flex gap-2 mb-2">
+                    <input type="text" id="ghUser" placeholder="Username GitHub" class="border p-1 text-xs w-1/2 rounded" value="USERNAME_GITHUB_ANDA">
+                    <input type="text" id="ghRepo" placeholder="Nama Repo" class="border p-1 text-xs w-1/2 rounded" value="NAMA_REPO_ANDA">
+                </div>
+
+                <div id="gallery" class="grid grid-cols-3 gap-2 h-64 overflow-y-auto p-2 bg-gray-50 border rounded">
+                    <p class="col-span-3 text-center text-gray-400 text-sm mt-10">Klik Refresh untuk memuat gambar...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-6 bg-gray-900 text-green-400 font-mono text-sm border-t-4 border-green-500">
+            <div class="flex justify-between mb-2">
+                <h3 class="text-white font-bold">Isi File 'products.json' Saat Ini:</h3>
+                <button onclick="copyAll()" class="bg-white text-gray-900 px-3 py-1 rounded text-xs font-bold hover:bg-gray-200">COPY SEMUA</button>
+            </div>
+            <textarea id="jsonOutput" class="w-full h-64 bg-gray-800 p-4 rounded focus:outline-none" readonly>[]</textarea>
+            <p class="text-gray-500 text-xs mt-2">*Copy semua kode di atas, lalu timpa (paste) ke dalam file 'products.json' di GitHub Anda.</p>
+        </div>
+    </div>
+
+    <script>
+        // Data sementara di memori browser
+        let currentProducts = [];
+
+        // 1. Load data JSON yang sudah ada (agar tidak hilang saat nambah baru)
+        async function loadExistingJSON() {
+            try {
+                // Mencoba membaca file products.json yang sudah ada di website
+                const response = await fetch('products.json');
+                if (response.ok) {
+                    currentProducts = await response.json();
+                    updateOutput();
+                }
+            } catch (e) {
+                console.log("Belum ada file products.json atau gagal baca.");
+            }
+        }
+        loadExistingJSON();
+
+        // 2. Load Gambar dari GitHub API
+        async function loadImages() {
+            const user = document.getElementById('ghUser').value;
+            const repo = document.getElementById('ghRepo').value;
+            const gallery = document.getElementById('gallery');
+            
+            gallery.innerHTML = '<p class="text-center col-span-3">Memuat...</p>';
+            try {
+                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/aset`);
+                const files = await res.json();
+                
+                gallery.innerHTML = '';
+                files.filter(f => f.name.match(/\.(jpg|jpeg|png)$/i)).forEach(f => {
+                    const div = document.createElement('div');
+                    div.className = 'cursor-pointer border rounded overflow-hidden hover:opacity-75';
+                    div.innerHTML = `<img src="${f.download_url}" class="w-full h-20 object-cover pointer-events-none">`;
+                    div.onclick = () => selectImg(div, f.name);
+                    gallery.appendChild(div);
+                });
+            } catch (e) {
+                gallery.innerHTML = '<p class="text-red-500 text-xs col-span-3 text-center">Gagal. Cek User/Repo.</p>';
+            }
+        }
+
+        function selectImg(el, name) {
+            document.querySelectorAll('#gallery div').forEach(d => d.classList.remove('selected-img'));
+            el.classList.add('selected-img');
+            document.getElementById('selectedImageUrl').value = `./aset/${name}`;
+            document.getElementById('statusImg').innerText = `Gambar Terpilih: ${name}`;
+        }
+
+        // 3. Generate & Tambah ke Array
+        function generateJSON() {
+            const nama = document.getElementById('nama').value;
+            const harga = document.getElementById('harga').value;
+            const desc = document.getElementById('deskripsi').value;
+            const img = document.getElementById('selectedImageUrl').value;
+
+            if(!nama || !img) { alert("Lengkapi data!"); return; }
+
+            const newProduct = {
+                id: Date.now(), // ID unik berdasarkan waktu
+                nama: nama,
+                harga: parseInt(harga),
+                deskripsi: desc,
+                gambar: img,
+                wa: "6281234567890" // Ganti dengan nomor WA default Anda
+            };
+
+            // Tambahkan ke daftar paling atas
+            currentProducts.unshift(newProduct);
+            updateOutput();
+            
+            // Reset Form
+            document.getElementById('nama').value = '';
+            document.getElementById('harga').value = '';
+            document.getElementById('deskripsi').value = '';
+            alert("Produk ditambahkan ke list JSON! Jangan lupa COPY dan update di GitHub.");
+        }
+
+        function updateOutput() {
+            document.getElementById('jsonOutput').value = JSON.stringify(currentProducts, null, 2);
+        }
+
+        function copyAll() {
+            document.getElementById('jsonOutput').select();
+            document.execCommand('copy');
+            alert("Kode JSON tersalin! Sekarang buka GitHub -> products.json -> Edit -> Paste -> Commit.");
+        }
+    </script>
+</body>
+</html>
