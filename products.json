@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "nama": "Kerupuk Lomang Original",
+    "harga": 15000,
+    "deskripsi": "Rasa asli ubi kayu yang gurih dan otentik. Dibuat dari ubi pilihan tanpa pengawet.",
+    "gambar": "./aset/1.png",
+    "wa": "6281234567890"
+  },
+  {
+    "id": 2,
+    "nama": "Kerupuk Lomang Pedas Manis",
+    "harga": 17000,
+    "deskripsi": "Perpaduan sempurna rasa pedas dari cabai segar dan manis yang bikin ketagihan.",
+    "gambar": "./aset/2.png",
+    "wa": "6281234567890"
+  },
+  {
+    "id": 3,
+    "nama": "Kerupuk Lomang Daun Jeruk",
+    "harga": 16000,
+    "deskripsi": "Kerenyahan klasik dengan aroma wangi dan segar dari irisan daun jeruk asli.",
+    "gambar": "./aset/3.png",
+    "wa": "6281234567890"
+  }
+]
