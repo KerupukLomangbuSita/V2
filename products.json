@@ -1,5 +1,13 @@
 [
   {
+    "id": 1767949652285,
+    "nama": "tes",
+    "harga": 20000,
+    "deskripsi": "ksdsdmsdv",
+    "gambar": "./aset/15.jpg",
+    "wa": "6281234567890"
+  },
+  {
     "id": 1,
     "nama": "Kerupuk Lomang Original",
     "harga": 15000,
